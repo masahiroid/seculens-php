@@ -23,7 +23,7 @@ final class Wizard
     {
         // A blocking fgets defers PHP signal callbacks until another line arrives.
         // Poll STDIN and read one available byte at a time so Ctrl+C stays responsive.
-        if (in_array(stream_get_meta_data($this->stream)['stream_type'], ['MEMORY','TEMP'], true)) {
+        if (PHP_OS_FAMILY === 'Windows' || in_array(stream_get_meta_data($this->stream)['stream_type'], ['MEMORY','TEMP'], true)) {
             return fgets($this->stream);
         }
         $line = '';
@@ -31,7 +31,8 @@ final class Wizard
             $read = [$this->stream]; $write = []; $except = [];
             $ready = @stream_select($read, $write, $except, 0, 200000);
             if (function_exists('pcntl_signal_dispatch')) { pcntl_signal_dispatch(); }
-            if (!$ready) { continue; }
+            if ($ready === false) { throw new \RuntimeException('Cannot read interactive input; use scan/sbom options on this platform.'); }
+            if ($ready === 0) { continue; }
             $byte = fgetc($this->stream);
             if ($byte === false) { return $line === '' ? false : $line; }
             $line .= $byte;
