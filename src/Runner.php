@@ -21,8 +21,8 @@ final class Runner
             $analysis = Analysis::scan($options['source']);
             array_push($report['findings'], ...$analysis['findings']); $report['sourceAnalysis'] = $analysis['metadata'];
         }
-        $directory = $options['output'] ?? 'reports';
-        if (!is_dir($directory) && !mkdir($directory,0777,true) && !is_dir($directory)) { throw new \RuntimeException('Cannot create report output directory'); }
+        $directory = $options['output'] ?? 'reports'; Json::localPath($directory);
+        if (!is_dir($directory) && !mkdir($directory,0700,true) && !is_dir($directory)) { throw new \RuntimeException('Cannot create report output directory'); }
         $temporary = $directory.'/.seculens-'.bin2hex(random_bytes(8));
         if (!mkdir($temporary,0700)) { throw new \RuntimeException('Cannot create temporary report directory'); }
         try {
@@ -30,6 +30,7 @@ final class Runner
             Json::write($temporary.'/report.json',Json::encode($report,true)."\n");
             Json::write($temporary.'/sbom.json',$sbomText); Json::write($temporary.'/database.json',$databaseText);
             foreach (['report.docx','report.json','sbom.json','database.json'] as $name) {
+                chmod($temporary.'/'.$name,0600);
                 if (!rename($temporary.'/'.$name,$directory.'/'.$name)) { throw new \RuntimeException("Cannot save output: $name"); }
             }
         } finally {

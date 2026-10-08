@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+- Protect report and SBOM output from destination symlink overwrite, and restrict new report file permissions.
+- Reject URL/stream wrapper paths in local JSON input and output.
+
+
 ## 0.1.1
 
 Exclude development dependencies and test caches from Composer archives; interrupt blocked wizard input immediately on Ctrl+C.

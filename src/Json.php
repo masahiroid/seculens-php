@@ -14,6 +14,8 @@ final class Json
     }
     public static function read(string $path): string
     {
+        self::localPath($path);
+        if (!is_file($path)) { throw new \InvalidArgumentException('Input must be a local regular file'); }
         $text = @file_get_contents($path);
         if ($text === false) {
             throw new \RuntimeException("Cannot read file: $path");
@@ -22,8 +24,20 @@ final class Json
     }
     public static function write(string $path, string $text): void
     {
-        if (file_put_contents($path, $text) === false) {
-            throw new \RuntimeException("Cannot write file: $path");
+        self::localPath($path);
+        if (!is_dir(dirname($path))) { throw new \RuntimeException('Output directory does not exist'); }
+        $temporary = tempnam(dirname($path), '.seculens-');
+        if ($temporary === false) { throw new \RuntimeException('Cannot create output file'); }
+        try {
+            if (file_put_contents($temporary, $text) === false || !rename($temporary, $path)) {
+                throw new \RuntimeException("Cannot write file: $path");
+            }
+        } finally { if (is_file($temporary)) { unlink($temporary); } }
+    }
+    public static function localPath(string $path): void
+    {
+        if ($path === '' || str_contains($path, "\0") || preg_match('~^[a-z][a-z0-9+.-]*://~i', $path)) {
+            throw new \InvalidArgumentException("Only local filesystem paths are supported");
         }
     }
     public static function object(mixed $value, string $message): array
