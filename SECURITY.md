@@ -1,6 +1,6 @@
 # Security policy
 
-The latest PHP release is the supported early-release version. Update dependencies and review the current release before reporting.
+The latest SecuLens 1.x release is supported. Update dependencies and review the current release before reporting.
 
 Report vulnerabilities privately using GitHub's **Report a vulnerability** option on https://github.com/masahiroid/seculens-php/security. Include the affected version, minimal reproduction, impact and suggested mitigation. Do not put credentials or sensitive customer SBOM/source data in public issues.
 

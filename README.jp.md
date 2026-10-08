@@ -4,7 +4,7 @@
 
 SecuLensの独立したPHP実装です。SPDX／CycloneDX JSONのSBOMを読み込み、OSVの脆弱性情報とバージョンを照合します。SPDXライセンスポリシーの評価、PHPのAST解析、顧客提出用Word・JSONレポートの生成に対応します。Python、Node.js、Trivyの実行環境は不要です。
 
-**0.1.1は初期リリースです。** 脆弱性の一致は指定データベースに基づく根拠、ASTの検出は確認候補です。完全なSAST、悪用可能性、法的な適合性の確定は行いません。[Python版](https://github.com/masahiroid/seculens-python)・[JS／TypeScript版](https://github.com/masahiroid/seculens)とJSONレポートの形式を揃えています。
+**バージョン1.0.0。** 脆弱性の一致は指定データベースに基づく根拠、ASTの検出は確認候補です。完全なSAST、悪用可能性、法的な適合性の確定は行いません。[Python版](https://github.com/masahiroid/seculens-python)・[JS／TypeScript版](https://github.com/masahiroid/seculens)とJSONレポートの形式を揃えています。
 
 ## インストール
 

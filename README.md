@@ -4,7 +4,7 @@
 
 Independent native PHP security assessment CLI and library. Import SPDX or CycloneDX JSON SBOMs, match dependency versions against OSV advisory snapshots, evaluate SPDX license policies, review PHP syntax trees and generate customer-facing Word and JSON reports. PHP 8.2+; no Python, Node.js or Trivy runtime is needed.
 
-**0.1.1 is an initial release.** Matches are evidence from the supplied snapshot; AST findings are review candidates. Full SAST, exploitability and legal compliance determinations are outside this release. The [Python](https://github.com/masahiroid/seculens-python) and [JS/TypeScript](https://github.com/masahiroid/seculens) implementations share the JSON report schema.
+**Version 1.0.0.** Matches are evidence from the supplied snapshot; AST findings are review candidates. Full SAST, exploitability and legal compliance determinations are outside this release. The [Python](https://github.com/masahiroid/seculens-python) and [JS/TypeScript](https://github.com/masahiroid/seculens) implementations share the JSON report schema.
 
 ## Installation
 
