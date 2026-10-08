@@ -24,3 +24,5 @@ jobs:
       - run: composer lint
       - run: composer test
       - run: composer audit
+      - run: composer archive --format=zip --dir=releases --file=seculens-ci
+      - run: php tests/check_archive.php releases/seculens-ci.zip
