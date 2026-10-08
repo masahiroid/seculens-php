@@ -1,0 +1,16 @@
+SecuLens for PHP
+Copyright 2026 SecuLens contributors
+
+SecuLens code is licensed under Apache-2.0; see LICENSE.
+
+Bundled asset: assets/NotoSansJP-Regular.otf
+Noto Sans JP, SIL Open Font License 1.1; see assets/OFL.txt.
+The font is embedded in Japanese Word reports using OOXML font obfuscation.
+
+Dependencies are installed by Composer and retain their own licenses.
+PHPWord is LGPL-3.0; PHP-Parser, Symfony components and composer/spdx-licenses
+have their respective open-source licenses. See installed dependency licenses.
+OSV advisory records retain their original source licensing.
+
+SecuLens is independent of Trivy and the optical lens company using the
+SECULENS name.

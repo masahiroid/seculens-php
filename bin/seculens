@@ -1,0 +1,18 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+$autoload = $_composer_autoload_path ?? dirname(__DIR__).'/vendor/autoload.php';
+if (!is_file($autoload)) { fwrite(STDERR,"Install dependencies with composer install first.\n"); exit(2); }
+require $autoload;
+if (function_exists('pcntl_async_signals')) {
+    pcntl_async_signals(true);
+    pcntl_signal(SIGINT,static function(): void { fwrite(STDERR,"\nCancelled.\n"); exit(130); });
+}
+try {
+    $application = SecuLens\Cli::application();
+    $application->setCatchExceptions(false);
+    exit($application->run());
+} catch (Throwable $e) {
+    fwrite(STDERR, $e->getMessage()."\n");
+    exit(2);
+}

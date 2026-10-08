@@ -1,0 +1,71 @@
+{
+  "name": "masahiroid/seculens",
+  "description": "Native PHP SBOM vulnerability matching, license policies, AST review and customer Word reports",
+  "type": "library",
+  "license": "Apache-2.0",
+  "keywords": [
+    "security",
+    "sbom",
+    "spdx",
+    "cyclonedx",
+    "osv",
+    "docx",
+    "static-analysis"
+  ],
+  "homepage": "https://github.com/masahiroid/seculens-php",
+  "support": {
+    "issues": "https://github.com/masahiroid/seculens-php/issues",
+    "source": "https://github.com/masahiroid/seculens-php"
+  },
+  "require": {
+    "php": ">=8.2",
+    "ext-curl": "*",
+    "ext-dom": "*",
+    "ext-mbstring": "*",
+    "ext-xml": "*",
+    "ext-zip": "*",
+    "composer/spdx-licenses": "^1.6",
+    "nikic/php-parser": "^5.9",
+    "phpoffice/phpword": "^1.4",
+    "symfony/console": "^7.4",
+    "symfony/process": "^7.4"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "SecuLens\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "SecuLens\\Tests\\": "tests/"
+    }
+  },
+  "bin": [
+    "bin/seculens"
+  ],
+  "scripts": {
+    "test": "phpunit",
+    "lint": "@php tests/lint.php"
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": false,
+    "platform": {
+      "php": "8.2.0"
+    }
+  },
+  "archive": {
+    "exclude": [
+      "/tests",
+      "/.github",
+      "/reports",
+      "/releases",
+      "/.gitignore",
+      "/phpunit.xml",
+      "/composer.lock"
+    ]
+  }
+}
