@@ -6,7 +6,7 @@ if (!is_file($autoload)) { fwrite(STDERR,"Install dependencies with composer ins
 require $autoload;
 if (function_exists('pcntl_async_signals')) {
     pcntl_async_signals(true);
-    pcntl_signal(SIGINT,static function(): void { fwrite(STDERR,"\nCancelled.\n"); exit(130); });
+    pcntl_signal(SIGINT,static function(): void { fwrite(STDERR,"\nCancelled.\n"); exit(130); }, false);
 }
 try {
     $application = SecuLens\Cli::application();

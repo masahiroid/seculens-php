@@ -62,6 +62,18 @@ final class ReportCliTest extends TestCase
         $p=new Process([PHP_BINARY,$command,'scan','missing.json','--unknown']);$p->run();self::assertSame(2,$p->getExitCode());
         $p=new Process([PHP_BINARY,$command,'wizard','--lang','ja']);$p->setInput('');$p->run();self::assertSame(0,$p->getExitCode());self::assertStringContainsString('中止しました',$p->getOutput());
     }
+    public function testCtrlCInterruptsBlockedWizardInput(): void
+    {
+        if (!function_exists('pcntl_async_signals')) { self::markTestSkipped('pcntl is unavailable'); }
+        $input = new \Symfony\Component\Process\InputStream();
+        $process = new Process([PHP_BINARY, dirname(__DIR__).'/bin/seculens', 'wizard', '--lang', 'en']);
+        $process->setInput($input); $process->setTimeout(3); $process->start();
+        try {
+            usleep(200000); $process->signal(SIGINT); $process->wait();
+            self::assertSame(130, $process->getExitCode());
+            self::assertStringContainsString('Cancelled', $process->getErrorOutput());
+        } finally { $process->stop(0); $input->close(); }
+    }
     public function testGeneratorArgumentsArePassedWithoutShellEvaluation(): void
     {
         $fake=$this->directory.'/fake-syft';

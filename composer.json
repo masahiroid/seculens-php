@@ -65,7 +65,10 @@
       "/releases",
       "/.gitignore",
       "/phpunit.xml",
-      "/composer.lock"
+      "/composer.lock",
+      "/vendor",
+      "/.phpunit.cache",
+      "/.phpunit.result.cache"
     ]
   }
 }

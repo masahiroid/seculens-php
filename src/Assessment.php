@@ -4,7 +4,7 @@ namespace SecuLens;
 
 final class Assessment
 {
-    public const VERSION = '0.1.0';
+    public const VERSION = '0.1.1';
     public const LIMITATIONS = [
         'No match means no matching record in the supplied database snapshot, not absence of vulnerabilities.',
         'License policy checks are not a legal compliance determination.',

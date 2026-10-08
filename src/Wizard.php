@@ -12,11 +12,31 @@ final class Wizard
     {
         while (true) {
             ($this->write)($prompt.($default!=='' ? " [$default]" : '').': ',false);
-            $line = fgets($this->stream);
+            $line = $this->readLine();
             if ($line===false) { throw new WizardCancelled(); }
             $value = trim($line); if ($value==='') { $value=$default; }
             if ($valid===null || $valid($value)) { return $value; }
             ($this->write)($this->t('Invalid value. Please try again.','値を確認して再入力してください。'),true);
+        }
+    }
+    private function readLine(): string|false
+    {
+        // A blocking fgets defers PHP signal callbacks until another line arrives.
+        // Poll STDIN and read one available byte at a time so Ctrl+C stays responsive.
+        if (in_array(stream_get_meta_data($this->stream)['stream_type'], ['MEMORY','TEMP'], true)) {
+            return fgets($this->stream);
+        }
+        $line = '';
+        while (true) {
+            $read = [$this->stream]; $write = []; $except = [];
+            $ready = @stream_select($read, $write, $except, 0, 200000);
+            if (function_exists('pcntl_signal_dispatch')) { pcntl_signal_dispatch(); }
+            if (!$ready) { continue; }
+            $byte = fgetc($this->stream);
+            if ($byte === false) { return $line === '' ? false : $line; }
+            $line .= $byte;
+            if ($byte === "\n") { return $line; }
+            if (strlen($line) > 65536) { throw new \InvalidArgumentException('Wizard input line is too long'); }
         }
     }
     private function yes(string $prompt,bool $default=false): bool
