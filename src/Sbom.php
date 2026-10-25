@@ -46,7 +46,15 @@ final class Sbom
                         $value = $l['expression'] ?? $l['license']['id'] ?? $l['license']['name'] ?? null;
                         if (Json::text($value)) { $licenses[] = $value; }
                     }
-                    $components[] = self::component($c['bom-ref'] ?? "$prefix$i", isset($c['group']) ? $c['group'].'/'.$c['name'] : $c['name'], $c['version'] ?? null, $c['purl'] ?? null, $licenses);
+                    $hashes = [];
+                    foreach (Json::list($c['hashes'] ?? [], 'Invalid hashes') as $h) {
+                        if (is_array($h) && isset($h['alg'], $h['content'])) {
+                            $hashes[] = ['alg' => (string)$h['alg'], 'content' => (string)$h['content']];
+                        }
+                    }
+                    $comp = self::component($c['bom-ref'] ?? "$prefix$i", isset($c['group']) ? $c['group'].'/'.$c['name'] : $c['name'], $c['version'] ?? null, $c['purl'] ?? null, $licenses);
+                    if (!empty($hashes)) { $comp['hashes'] = $hashes; }
+                    $components[] = $comp;
                     $collect(Json::list($c['components'] ?? [], 'Invalid nested components'), "$prefix$i/", $depth + 1);
                 }
             };
@@ -66,7 +74,15 @@ final class Sbom
                     if (($ref['referenceType'] ?? null) === 'purl') { $purl = $ref['referenceLocator'] ?? null; break; }
                 }
                 $license = ($p['licenseConcluded'] ?? 'NOASSERTION') !== 'NOASSERTION' ? $p['licenseConcluded'] : ($p['licenseDeclared'] ?? 'NOASSERTION');
-                $components[] = self::component($p['SPDXID'] ?? "package-$i", $p['name'], $p['versionInfo'] ?? null, $purl, Json::text($license) ? [$license] : []);
+                $hashes = [];
+                foreach (Json::list($p['checksums'] ?? [], 'Invalid checksums') as $cs) {
+                    if (is_array($cs) && isset($cs['algorithm'], $cs['checksumValue'])) {
+                        $hashes[] = ['alg' => (string)$cs['algorithm'], 'content' => (string)$cs['checksumValue']];
+                    }
+                }
+                $comp = self::component($p['SPDXID'] ?? "package-$i", $p['name'], $p['versionInfo'] ?? null, $purl, Json::text($license) ? [$license] : []);
+                if (!empty($hashes)) { $comp['hashes'] = $hashes; }
+                $components[] = $comp;
             }
             foreach (Json::list($d['relationships'] ?? [], 'Invalid relationships') as $e) {
                 if (($e['relationshipType'] ?? null) === 'DEPENDS_ON') { $dependencies[] = ['from' => $e['spdxElementId'] ?? null, 'to' => $e['relatedSpdxElement'] ?? null]; }
@@ -83,7 +99,50 @@ final class Sbom
             if (!Json::text($e['from']) || !Json::text($e['to'])) { throw new \InvalidArgumentException('Invalid dependency endpoints'); }
             if (!isset($ids[$e['from']], $ids[$e['to']])) { $warnings[] = "Dependency endpoint not in component list: {$e['from']} -> {$e['to']}"; }
         }
+        self::computeDependencyDepths($components, $dependencies);
         return compact('format', 'version', 'components', 'dependencies', 'warnings');
+    }
+    public static function computeDependencyDepths(array &$components, array $dependencies): void
+    {
+        if (empty($dependencies)) { return; }
+        $adj = []; $inDegree = [];
+        foreach ($components as $c) {
+            $adj[$c['id']] = [];
+            $inDegree[$c['id']] = 0;
+        }
+        foreach ($dependencies as $dep) {
+            $from = $dep['from'] ?? ''; $to = $dep['to'] ?? '';
+            if (isset($adj[$from])) { $adj[$from][] = $to; }
+            if (isset($inDegree[$to])) { $inDegree[$to]++; }
+        }
+        $roots = [];
+        foreach ($inDegree as $id => $deg) {
+            if ($deg === 0 && !empty($adj[$id])) { $roots[] = $id; }
+        }
+        $depths = []; $queue = [];
+        foreach ($roots as $r) {
+            foreach ($adj[$r] as $child) {
+                if (!isset($depths[$child])) {
+                    $depths[$child] = 1;
+                    $queue[] = ['id' => $child, 'depth' => 1];
+                }
+            }
+        }
+        while (!empty($queue)) {
+            $item = array_shift($queue);
+            $cid = $item['id']; $depth = $item['depth'];
+            foreach ($adj[$cid] ?? [] as $next) {
+                if (!isset($depths[$next]) || $depths[$next] > $depth + 1) {
+                    $depths[$next] = $depth + 1;
+                    $queue[] = ['id' => $next, 'depth' => $depth + 1];
+                }
+            }
+        }
+        foreach ($components as &$c) {
+            if (isset($depths[$c['id']])) {
+                $c['depth'] = $depths[$c['id']];
+            }
+        }
     }
     private static function component(mixed $id, string $name, mixed $version, mixed $purl, array $licenses): array
     {

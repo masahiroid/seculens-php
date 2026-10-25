@@ -1,5 +1,32 @@
+# Dependencies & build
 /vendor/
-/reports/
 /releases/
+composer.phar
+
+# Testing caches
 /.phpunit.cache/
 /.phpunit.result.cache
+
+# SecuLens outputs & reports
+/.seculens/
+/reports/
+*.docx
+*.json.bak
+
+# Environment variables & secrets
+.env*
+*.pem
+*.key
+
+# Logs & temp
+*.log
+.temp/
+.tmp/
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -50,8 +50,93 @@ final class Analysis
             }
         }
         if (!$files) { $findings[] = self::coverage($target, 'PHP-NO-FILES', 'No PHP source files found', 1); }
+        if (is_dir($root)) {
+            array_push($findings, ...self::checkLifecycleScripts($root));
+        }
         usort($findings, static fn(array $a, array $b): int => [$a['file'],$a['line'],$a['ruleId']] <=> [$b['file'],$b['line'],$b['ruleId']]);
         return ['findings'=>$findings,'metadata'=>['language'=>'PHP','target'=>$target,'filesDiscovered'=>count($files),'filesParsed'=>$parsed]];
+    }
+    public static function checkLifecycleScripts(string $root): array
+    {
+        $findings = [];
+        $composerFile = $root . DIRECTORY_SEPARATOR . 'composer.json';
+        if (is_file($composerFile)) {
+            try {
+                $data = json_decode(file_get_contents($composerFile) ?: '', true);
+                if (is_array($data) && isset($data['scripts']) && is_array($data['scripts'])) {
+                    $hooks = ['pre-install-cmd', 'post-install-cmd', 'pre-update-cmd', 'post-update-cmd', 'pre-autoload-dump', 'post-autoload-dump'];
+                    foreach ($hooks as $hook) {
+                        if (isset($data['scripts'][$hook])) {
+                            $cmd = is_array($data['scripts'][$hook]) ? implode('; ', $data['scripts'][$hook]) : (string)$data['scripts'][$hook];
+                            if (trim($cmd) !== '') {
+                                $findings[] = [
+                                    'category' => 'security',
+                                    'ruleId' => 'SC-LIFECYCLE-SCRIPT',
+                                    'subject' => 'composer.json',
+                                    'status' => 'review',
+                                    'summary' => "Lifecycle script '{$hook}' detected in root composer.json",
+                                    'evidence' => "\"{$hook}\": \"{$cmd}\"",
+                                    'recommendation' => 'Review lifecycle scripts or execute with --no-scripts to prevent arbitrary command execution.',
+                                    'file' => 'composer.json',
+                                    'line' => 1,
+                                ];
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable) {}
+        }
+        $pkgFile = $root . DIRECTORY_SEPARATOR . 'package.json';
+        if (is_file($pkgFile)) {
+            try {
+                $data = json_decode(file_get_contents($pkgFile) ?: '', true);
+                if (is_array($data) && isset($data['scripts']) && is_array($data['scripts'])) {
+                    $hooks = ['preinstall', 'install', 'postinstall', 'preuninstall', 'postuninstall'];
+                    foreach ($hooks as $hook) {
+                        if (isset($data['scripts'][$hook]) && is_string($data['scripts'][$hook]) && trim($data['scripts'][$hook]) !== '') {
+                            $findings[] = [
+                                'category' => 'security',
+                                'ruleId' => 'SC-LIFECYCLE-SCRIPT',
+                                'subject' => 'package.json',
+                                'status' => 'review',
+                                'summary' => "Lifecycle script '{$hook}' detected in package.json",
+                                'evidence' => "\"{$hook}\": \"{$data['scripts'][$hook]}\"",
+                                'recommendation' => 'Review the lifecycle script or install with --ignore-scripts to avoid arbitrary command execution.',
+                                'file' => 'package.json',
+                                'line' => 1,
+                            ];
+                        }
+                    }
+                }
+            } catch (\Throwable) {}
+        }
+        $lockFile = $root . DIRECTORY_SEPARATOR . 'package-lock.json';
+        if (is_file($lockFile)) {
+            try {
+                $lock = json_decode(file_get_contents($lockFile) ?: '', true);
+                if (is_array($lock) && isset($lock['packages']) && is_array($lock['packages'])) {
+                    foreach ($lock['packages'] as $pkgPath => $pkgVal) {
+                        if ($pkgPath === '' || !is_array($pkgVal)) { continue; }
+                        if (!empty($pkgVal['hasInstallScript'])) {
+                            $parts = explode('node_modules/', (string)$pkgPath);
+                            $name = end($parts);
+                            $findings[] = [
+                                'category' => 'security',
+                                'ruleId' => 'SC-LIFECYCLE-SCRIPT',
+                                'subject' => $name,
+                                'status' => 'review',
+                                'summary' => "Dependency has install script: {$name}",
+                                'evidence' => "hasInstallScript: true (version: " . ($pkgVal['version'] ?? 'unknown') . ")",
+                                'recommendation' => 'Review the package installation scripts or use --ignore-scripts.',
+                                'file' => 'package-lock.json',
+                                'line' => 1,
+                            ];
+                        }
+                    }
+                }
+            } catch (\Throwable) {}
+        }
+        return $findings;
     }
     private static function coverage(string $file, string $rule, string $evidence, int $line): array
     {
@@ -83,9 +168,14 @@ final class ReviewVisitor extends NodeVisitorAbstract
             // Qualified user functions are not treated as global builtins. Unqualified namespace calls can fall back to globals.
             if ($node->name->isUnqualified() || $node->name instanceof Node\Name\FullyQualified && !str_contains($name, '\\')) {
                 if (in_array($name, ['exec','system','shell_exec','passthru','popen','proc_open'], true)) { $this->add($node, 'PHP-SHELL', 'Shell execution requires review', $name); }
+                if ($name === 'getenv') { $this->add($node, 'PHP-PROCESS-ENV', 'Environment variable access requires review', $name); }
                 if ($name === 'unserialize') { $this->add($node, 'PHP-UNSERIALIZE', 'Deserialization requires review', 'unserialize; inspect input trust and allowed_classes'); }
                 if (in_array($name, ['md5','sha1'], true)) { $this->add($node, 'PHP-WEAK-HASH', 'Hash use requires context review', $name.' is unsuitable for password storage or collision-resistant security uses'); }
             }
+        } elseif ($node instanceof Node\Expr\Variable && is_string($node->name) && in_array($node->name, ['_ENV','_SERVER'], true)) {
+            $this->add($node, 'PHP-PROCESS-ENV', 'Environment variable access requires review', '$'.$node->name);
+        } elseif ($node instanceof Node\Scalar\String_ && preg_match('/(?:\/\.ssh|\/\.aws|\/\.npmrc|\/\.composer|id_rsa|id_ed25519)/', $node->value)) {
+            $this->add($node, 'PHP-SENSITIVE-PATH', 'Sensitive credential path reference requires review', $node->value);
         } elseif (($node instanceof Node\Expr\MethodCall || $node instanceof Node\Expr\StaticCall) && $node->name instanceof Node\Identifier && in_array(strtolower($node->name->toString()), ['query','exec'], true)) {
             $args = $node->getArgs();
             if (isset($args[0]) && ($args[0]->value instanceof Node\Expr\BinaryOp\Concat || $args[0]->value instanceof Node\Scalar\InterpolatedString)) { $this->add($node, 'PHP-DYNAMIC-SQL', 'Constructed query requires review', 'Concatenated or interpolated argument to query/exec; receiver type is not resolved'); }

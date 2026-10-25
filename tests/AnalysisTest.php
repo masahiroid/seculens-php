@@ -63,4 +63,30 @@ PHP;
         file_put_contents($this->directory.'/safe.php',"<?php namespace App; include 'config.php'; \\App\\md5('x'); \\App\\exec('x');");
         self::assertSame([],Analysis::scan($this->directory)['findings']);
     }
+    public function testSupplyChainThreatsAndLifecycleScripts(): void
+    {
+        $code=<<<'PHP'
+<?php
+$token = $_ENV['NPM_TOKEN'];
+$key = getenv('SECRET_KEY');
+$path = '/home/user/.ssh/id_rsa';
+PHP;
+        file_put_contents($this->directory.'/malicious.php', $code);
+        file_put_contents($this->directory.'/composer.json', json_encode([
+            'name' => 'vendor/malicious',
+            'scripts' => ['post-install-cmd' => 'php malicious.php']
+        ]));
+        file_put_contents($this->directory.'/package-lock.json', json_encode([
+            'packages' => [
+                'node_modules/bad-lib' => ['version' => '1.0.0', 'hasInstallScript' => true]
+            ]
+        ]));
+
+        $r = Analysis::scan($this->directory);
+        $ids = array_column($r['findings'], 'ruleId');
+        self::assertContains('PHP-PROCESS-ENV', $ids);
+        self::assertContains('PHP-SENSITIVE-PATH', $ids);
+        self::assertContains('SC-LIFECYCLE-SCRIPT', $ids);
+        self::assertCount(2, array_filter($ids, static fn(string $id): bool => $id === 'SC-LIFECYCLE-SCRIPT'));
+    }
 }

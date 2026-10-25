@@ -29,6 +29,12 @@ final class Cli
         $sbom->addOption('format',null,InputOption::VALUE_REQUIRED,'cyclonedx / spdx','cyclonedx')->addOption('output',null,InputOption::VALUE_REQUIRED,'Output file','sbom.json')->addOption('syft',null,InputOption::VALUE_REQUIRED,'Syft executable','syft');
         $sbom->setCode(static fn(InputInterface $in,OutputInterface $out): int => self::guard($out,static fn(): int => self::runGeneration(['directory'=>$in->getArgument('directory')]+$in->getOptions(),$out)));
         $app->add($sbom);
+        $mcp=new Command('mcp'); $mcp->setDescription('Start the SecuLens Model Context Protocol (MCP) stdio server');
+        $mcp->setCode(static function(InputInterface $in,OutputInterface $out): int {
+            Mcp::runServer();
+            return 0;
+        });
+        $app->add($mcp);
         $wizard=new Command('wizard'); $wizard->setDescription('Interactive English/Japanese setup');
         $wizard->addOption('lang',null,InputOption::VALUE_REQUIRED,'Wizard/report language: en / ja');
         $wizard->setCode(static function(InputInterface $in,OutputInterface $out): int {
