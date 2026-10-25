@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0
+
+- Add lifecycle script detection (`SC-LIFECYCLE-SCRIPT`) in `composer.json`, `package.json` and `package-lock.json`.
+- Add supply-chain AST inspection rules for shell execution (`PHP-SHELL`), environment variable access (`PHP-PROCESS-ENV`), and sensitive path references (`PHP-SENSITIVE-PATH`).
+- Add Model Context Protocol (MCP) stdio server (`seculens mcp`) supporting Claude Desktop, Cursor, and other AI agents.
+- Add lockfile integrity verification (`SC-INTEGRITY-MISMATCH`, `SC-INSECURE-REGISTRY-URL`).
+- Add transitive dependency depth calculation in SBOM parsing.
+- Add weekly Dependabot automated updates and pull request dependency review workflow.
+
 ## 1.0.0
 
 - Align the Python, JavaScript/TypeScript and PHP release versions at 1.0.0.
