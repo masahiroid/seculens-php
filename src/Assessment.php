@@ -4,13 +4,13 @@ namespace SecuLens;
 
 final class Assessment
 {
-    public const VERSION = '1.3.0';
+    public const VERSION = '1.4.0';
     public const LIMITATIONS = [
         'No match means no matching record in the supplied database snapshot, not absence of vulnerabilities.',
         'License policy checks are not a legal compliance determination.',
         'AST rules identify review candidates and complexity, not proven exploitability.',
         'SBOM content and package identifiers are supplied by the generating tool.',
-        'Packagist matching supports stable numeric versions and SemVer prereleases only; Composer branches and other version forms may be unassessed.',
+        'Packagist matching follows Composer version normalization (up to four numeric parts and dev/alpha/beta/RC/stable/patch stability); branch versions such as dev-main or 1.x-dev are unassessed.',
     ];
     public static function scan(string $sbomText, array $records, array $options = []): array
     {

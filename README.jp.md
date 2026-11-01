@@ -87,7 +87,7 @@ php bin/seculens sbom ./project --format spdx --output bom.spdx.json
 - CycloneDX 1.4〜1.7 JSONのコンポーネント、入れ子のコンポーネント、依存関係情報。
 - バージョンを含むPackage URL：`pkg:npm`・`pkg:pypi`・`pkg:composer`。
 - npmのSemVer、PyPIのPEP 440とパッケージ名の正規化。
-- Packagistの安定版数値SemVer互換バージョン、先頭の`v`、末尾が`.0`の4桁バージョン、SemVerプレリリース。Composerのブランチ、別名、固有のバージョン形式は未評価です。
+- Packagist：Composerの正規化に従います。先頭の`v`、1〜4桁の数値、ビルドメタデータの無視、安定度サフィックスの順序 dev < alpha（`a`）< beta（`b`）< RC < stable < patch（`pl`、`p`）。ブランチ指定（`dev-main`、`1.x-dev`）は未評価です。
 - OSVの明示的な影響バージョン、`SEMVER`／`ECOSYSTEM`範囲、修正版・最終影響版・上限の境界、撤回済み情報、ページ分割。同じ脆弱性の別名はコンポーネントごとに統合します。
 
 不正・未対応・不完全な範囲は未評価として記録します。GIT範囲のみの情報、他のエコシステム、SPDX 3、XMLは未対応です。入力検証はSecuLensが使う項目に限られ、規格全体への適合検証ではありません。DBの完全性や脆弱なコードへの到達可能性は確認できません。**「照合なし」は指定DBに一致がないという意味で、脆弱性がないことを保証しません。**

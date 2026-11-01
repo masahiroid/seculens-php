@@ -9,7 +9,8 @@ final class Versions
     {
         try {
             if ($ecosystem === 'PyPI') { return self::pepCompare(self::pep($a), self::pep($b)); }
-            if (!in_array($ecosystem, ['npm', 'Packagist'], true)) { return null; }
+            if ($ecosystem === 'Packagist') { return self::numbers(self::composer($a), self::composer($b)); }
+            if ($ecosystem !== 'npm') { return null; }
             $x = self::semver($a, $ecosystem); $y = self::semver($b, $ecosystem);
             $n = self::numbers($x[0], $y[0]);
             if ($n !== 0) { return $n; }
@@ -28,13 +29,21 @@ final class Versions
     private static function semver(string $v, string $ecosystem): array
     {
         $v = trim($v);
-        $v = $ecosystem === 'npm' ? ltrim($v, 'v=') : (str_starts_with($v, 'v') ? substr($v, 1) : $v);
-        if ($ecosystem === 'Packagist' && preg_match('/^\d+\.\d+\.\d+\.0$/', $v)) { $v = substr($v, 0, -2); }
+        $v = ltrim($v, 'v=');
         if (!preg_match('/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/D', $v, $m)) { throw new \InvalidArgumentException('Invalid SemVer'); }
         if (isset($m[4])) {
             foreach (explode('.', $m[4]) as $part) { if (ctype_digit($part) && strlen($part) > 1 && $part[0] === '0') { throw new \InvalidArgumentException('Leading zero in prerelease'); } }
         }
         return [[ $m[1], $m[2], $m[3] ], $m[4] ?? null];
+    }
+    /** Composer VersionParser normalization (dev < alpha < beta < RC < stable < patch); branch versions are invalid. */
+    private static function composer(string $v): array
+    {
+        $v = preg_replace('/\+.*$/s', '', preg_replace('/^v/i', '', trim($v)));
+        if (!preg_match('/^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\.(\d+))?(?:[._-]?(stable|beta|b|rc|alpha|a|patch|pl|p)(?:[.-]?(\d+))?)?([.-]?dev)?$/iD', $v, $m, PREG_UNMATCHED_AS_NULL)) { throw new \InvalidArgumentException('Invalid Composer version'); }
+        $stability = ['alpha'=>1,'a'=>1,'beta'=>2,'b'=>2,'rc'=>3,'stable'=>4,'patch'=>5,'pl'=>5,'p'=>5];
+        $rank = $m[5] !== null ? $stability[strtolower($m[5])] : ($m[7] !== null ? 0 : 4);
+        return [$m[1], $m[2] ?? '0', $m[3] ?? '0', $m[4] ?? '0', (string) $rank, $m[6] ?? '0', $m[5] !== null && $m[7] !== null ? '0' : '1'];
     }
     private static function integer(string $a, string $b): int
     {

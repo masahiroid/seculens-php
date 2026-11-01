@@ -31,7 +31,7 @@ final class WordReport
         'License policy checks are not a legal compliance determination.'=>'ライセンスポリシー評価は法的な適合性の確定を行うものではありません。',
         'AST rules identify review candidates and complexity, not proven exploitability.'=>'AST検査は要確認のコードや複雑性を抽出します。悪用可能性を立証するものではありません。',
         'SBOM content and package identifiers are supplied by the generating tool.'=>'SBOMの内容とパッケージ識別情報は生成ツールが提供したものです。',
-        'Packagist matching supports stable numeric versions and SemVer prereleases only; Composer branches and other version forms may be unassessed.'=>'Packagistは安定版の数値バージョンとSemVerプレリリースのみ対応します。Composerブランチなどは未評価になる場合があります。',
+        'Packagist matching follows Composer version normalization (up to four numeric parts and dev/alpha/beta/RC/stable/patch stability); branch versions such as dev-main or 1.x-dev are unassessed.'=>'PackagistはComposerのバージョン正規化（最大4桁の数値とdev/alpha/beta/RC/stable/patchの安定度）に従って照合します。dev-mainや1.x-devなどのブランチ指定は未判定になります。',
         'Review the advisory references for a fixed version and validate the upgrade.'=>'参照先で修正済みバージョンを確認し、更新後の動作を検証してください。',
         'Review the call and trace untrusted input before deciding whether it is exploitable.'=>'処理と外部入力の経路を確認し、実際の悪用可能性を判断してください。',
         'Consider simplifying the function and adding focused tests.'=>'関数の分割や簡素化を検討し、分岐に対応したテストを追加してください。',

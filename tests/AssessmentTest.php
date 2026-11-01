@@ -13,7 +13,7 @@ final class AssessmentTest extends TestCase
             ['1.2.3','1.2.4','npm',-1],['1.2.3+foo','1.2.3+bar','npm',0],['v1.2.3','=1.2.3','npm',0],
             ['1.0.0-alpha.2','1.0.0-alpha.10','npm',-1],['1.0.0-1','1.0.0-a','npm',-1],['1.0.0-rc.1','1.0.0','npm',-1],
             ['01.2.3','1.2.3','npm',null],['1.0.0-01','1.0.0','npm',null],['1.2','1.2.0','npm',null],
-            ['v5.4.0','5.4.0.0','Packagist',0],['5.4.0.1','5.4.0','Packagist',null],['dev-main','1.0.0','Packagist',null],
+            ['v5.4.0','5.4.0.0','Packagist',0],['5.4.0.1','5.4.0','Packagist',1],['dev-main','1.0.0','Packagist',null],
             ['1.0','1.0.0','PyPI',0],['1!1.0','2.0','PyPI',1],['1.0.dev1','1.0a1','PyPI',-1],
             ['1.0rc1','1.0','PyPI',-1],['1.0.post1','1.0','PyPI',1],['1.0-1','1.0.post1','PyPI',0],
             ['1.0a1.dev2','1.0a1','PyPI',-1],['1.0.post1.dev1','1.0.post1','PyPI',-1],

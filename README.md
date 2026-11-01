@@ -84,7 +84,7 @@ Use `--syft /path/to/syft` to select an executable. SecuLens invokes Syft with s
 - CycloneDX 1.4–1.7 JSON components, nested components and dependency relationships.
 - Package URLs `pkg:npm`, `pkg:pypi` and `pkg:composer` with versions.
 - npm SemVer precedence; PyPI PEP 440 precedence and normalized names.
-- Packagist stable numeric SemVer-compatible versions, leading `v`, four-part versions ending in `.0` and SemVer prereleases. Branches, branch aliases and other Composer-specific syntax remain unassessed.
+- Packagist versions follow Composer normalization: leading `v`, one to four numeric parts, build metadata ignored, and stability suffixes ordered dev < alpha (`a`) < beta (`b`) < RC < stable < patch (`pl`, `p`). Branch versions (`dev-main`, `1.x-dev`) remain unassessed.
 - OSV explicit versions, `SEMVER`/`ECOSYSTEM` intervals, fixed/last-affected/limit boundaries, withdrawn records, pagination and advisory alias consolidation per component.
 
 Malformed, unsupported or incomplete ranges are recorded as unassessed, rather than treated as a clean result. GIT-only ranges, other ecosystems, SPDX 3 and XML are not supported. Input checks cover fields used by SecuLens, not full standards conformance. Database completeness and vulnerable-code reachability cannot be established from an SBOM. **No match means no matching record in the supplied snapshot, not absence of vulnerabilities.**

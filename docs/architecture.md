@@ -16,6 +16,6 @@ SecuLens for PHP is a separate implementation. It does not invoke the Python or 
 
 All original SBOM/database text is retained. Report IDs include their hashes and the assessment time. Unsupported identities, invalid ranges, syntax errors and missing source coverage remain visible; a lack of matches is never presented as proof of safety.
 
-The initial implementation intentionally limits Composer version syntax to stable numeric SemVer-compatible values and SemVer prereleases. Full Composer branch/alias handling, interprocedural dataflow, framework-aware sources/sinks, source license discovery, container/OS vulnerability matching and customer-specific business-risk prioritization are future work.
+Composer versions follow Composer normalization and stability order (1.4.0); branch versions (`dev-main`, `1.x-dev`) remain unassessed. Branch alias resolution, interprocedural dataflow, framework-aware sources/sinks, source license discovery, container/OS vulnerability matching and customer-specific business-risk prioritization are future work.
 
 Validation includes unit/integration tests, native Composer installation, actual Syft generation in both formats and bilingual report rendering. An external development check compared 1,451 version pairs and all 2,592 CVSS 3.1 base metric combinations with the independent Python implementation; shared sample assessment JSON agreed except tool version.
