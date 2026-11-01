@@ -82,7 +82,7 @@ final class Mcp
                 'result' => [
                     'protocolVersion' => '2024-11-05',
                     'capabilities' => ['tools' => new \stdClass()],
-                    'serverInfo' => ['name' => 'seculens-php', 'version' => '1.2.0'],
+                    'serverInfo' => ['name' => 'seculens-php', 'version' => '1.3.0'],
                 ],
             ];
         }
