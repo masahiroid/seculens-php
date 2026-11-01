@@ -26,6 +26,7 @@
     "ext-zip": "*",
     "composer/spdx-licenses": "^1.6",
     "nikic/php-parser": "^5.9",
+    "opis/json-schema": "^2.6",
     "phpoffice/phpword": "^1.4",
     "symfony/console": "^7.4",
     "symfony/process": "^7.4"

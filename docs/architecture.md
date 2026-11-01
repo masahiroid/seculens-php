@@ -8,6 +8,7 @@ SecuLens for PHP is a separate implementation. It does not invoke the Python or 
 - `Licenses`: parsed expression trees and allow/deny/review policy decisions.
 - `Severity`: validated CVSS 3 base scores, database labels, applicable overrides and provenance.
 - `Assessment`: schema 1.1 report contract, hashes, component checks and alias consolidation.
+- `Validation`: offline JSON Schema validation against bundled SPDX/CycloneDX/report schemas in `schemas/`; never loads schemas named by input.
 - `Analysis`: PHP syntax trees and independent function complexity; no analyzed code execution.
 - `WordReport` / `FontEmbedder`: customer/standard reports and bundled Japanese font embedding.
 - `Runner`, `Cli`, `Wizard`: file output, console commands and explicit confirmation/EOF handling.

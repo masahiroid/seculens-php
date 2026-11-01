@@ -124,6 +124,15 @@ Critical／Highは赤、Mediumは黄、Lowは青、Noneは緑、Unratedは灰色
 
 日本語DOCXにはNoto Sans JP（SIL OFL 1.1）を埋め込み、容量が約4 MB増えます。LibreOfficeの描画で体裁を確認していますが、閲覧環境によって最終的な改ページは変わる場合があります。元の重大度情報、フィールドパス、参照先はJSONスキーマ1.1に保存します。他言語版と形式を揃え、PHPの`sourceAnalysis`には発見・解析済みファイル数も記録します。
 
+## スキーマ検証
+
+```sh
+seculens validate sbom.json                 # SPDX 2.2/2.3 または CycloneDX 1.4〜1.7 JSON
+seculens validate report.json --kind report # SecuLens レポートスキーマ 1.1
+```
+
+同梱の公式スキーマ（`schemas/`、出典・ハッシュ・ライセンスはそのREADME参照）でオフライン検証します。出力はJSON `{valid, schema, errors[]}` です。終了コード `0` は妥当、`2` は不正・未対応バージョン・入力エラーです。構造と書式の検証のみで、SBOMの網羅性や検出結果の正しさは保証しません。
+
 ## 終了コード
 
 - `0`：解析範囲の不足なく検査完了。検出結果が残る場合があります。

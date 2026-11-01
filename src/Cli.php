@@ -29,6 +29,16 @@ final class Cli
         $sbom->addOption('format',null,InputOption::VALUE_REQUIRED,'cyclonedx / spdx','cyclonedx')->addOption('output',null,InputOption::VALUE_REQUIRED,'Output file','sbom.json')->addOption('syft',null,InputOption::VALUE_REQUIRED,'Syft executable','syft');
         $sbom->setCode(static fn(InputInterface $in,OutputInterface $out): int => self::guard($out,static fn(): int => self::runGeneration(['directory'=>$in->getArgument('directory')]+$in->getOptions(),$out)));
         $app->add($sbom);
+        $validation=new Command('validate'); $validation->setDescription('Validate SBOM or report JSON offline');
+        $validation->addArgument('file',InputArgument::REQUIRED,'JSON file');
+        $validation->addOption('kind',null,InputOption::VALUE_REQUIRED,'sbom / report','sbom');
+        $validation->setCode(static fn(InputInterface $in,OutputInterface $out): int => self::guard($out,static function() use($in,$out): int {
+            $data=json_decode(Json::read($in->getArgument('file')),false,128,JSON_THROW_ON_ERROR);
+            $result=Validation::validate($data,$in->getOption('kind'));
+            $out->writeln(OutputFormatter::escape(Json::encode($result,true)));
+            return $result['valid']?0:2;
+        }));
+        $app->add($validation);
         $mcp=new Command('mcp'); $mcp->setDescription('Start the SecuLens Model Context Protocol (MCP) stdio server');
         $mcp->setCode(static function(InputInterface $in,OutputInterface $out): int {
             Mcp::runServer();

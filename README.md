@@ -121,6 +121,15 @@ Critical/High are red, Medium amber, Low blue, None green and Unrated gray. Labe
 
 Japanese DOCX embeds Noto Sans JP (SIL OFL 1.1), adding approximately 4 MB. Report layout was checked using LibreOffice rendering; final pagination may vary with the Word viewer. Original metadata, field paths and references remain in report JSON schema `1.1`, compatible with the other implementations. PHP `sourceAnalysis` also records discovered/parsed file counts.
 
+## Schema validation
+
+```sh
+seculens validate sbom.json                 # SPDX 2.2/2.3 or CycloneDX 1.4–1.7 JSON
+seculens validate report.json --kind report # SecuLens report schema 1.1
+```
+
+Validation runs offline against the official schemas bundled in `schemas/` (see its README for sources, hashes and licenses). Output is JSON `{valid, schema, errors[]}`. Exit code `0` means valid; `2` means invalid, an unsupported version, or an input error. Schema validation checks structure and formats only; it does not prove an SBOM is complete or that findings are correct.
+
 ## Exit codes
 
 - `0`: assessment completed without incomplete coverage; findings may still exist.
