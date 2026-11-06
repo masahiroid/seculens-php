@@ -12,6 +12,7 @@ final class Licenses
         foreach (['allow', 'deny'] as $key) {
             foreach (Json::list($p[$key] ?? [], 'Policy allow/deny must be arrays') as $s) { if (!Json::text($s)) { throw new \InvalidArgumentException('Policy entries must be strings'); } }
         }
+        if (array_key_exists('context', $p)) { Priority::validateContext($p['context']); }
         return $p;
     }
     public static function evaluate(string $expression, array $policy): string

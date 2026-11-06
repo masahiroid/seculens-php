@@ -103,6 +103,32 @@ php bin/seculens sbom ./project --format spdx --output bom.spdx.json
 
 SPDX式の`AND`・`OR`・括弧・`WITH`例外を解析します。`AND`は全分岐の許可、`OR`はいずれかの選択肢の許可が必要です。例外は式全体をポリシーへ登録してください。同一項目の許可・拒否が競合した場合は拒否を優先します。不明・独自・未記載のライセンスは要確認です。ポリシー未指定の場合も要確認とします。宣言の正確性、ソースのライセンス、配布義務、規制への適合は検証しません。
 
+## 優先度付け
+
+ポリシーファイルに任意の `context` を追加すると、環境に合わせて脆弱性を順位付けできます。指定しない場合、レポートに優先度は付きません。重大度とCVSSスコアは変わりません。
+
+```json
+{
+  "allow": ["MIT"],
+  "context": {
+    "defaults": { "exposure": "internal", "justification": "社内ネットワークでのみ稼働" },
+    "components": [
+      { "name": "lodash", "ecosystem": "npm", "reachability": "not-reachable", "justification": "ビルドスクリプトでのみ使用" }
+    ]
+  }
+}
+```
+
+基準は、CriticalがP1、HighとUnratedがP2、MediumがP3、LowとNoneがP4です。指定した要素ごとにP1〜P4の範囲で1段階動きます。NoneはP4のままです。
+
+| 要素 | 上げる | 変えない | 下げる |
+|---|---|---|---|
+| `exposure` | `internet` | `internal` | `isolated` |
+| `reachability` | `reachable` | `unknown` | `not-reachable` |
+| `criticality` | `high` | `medium` | `low` |
+
+パッケージ名（指定があれば`ecosystem`も）が一致し、その要素を指定している最初の`components`の項目が使われ、なければ`defaults`が使われます。どの項目にも`justification`が必須です。各指摘の`priority`には、使った要素、効果、出典、根拠を記録し、Wordレポートにも表示します。SecuLensは申告内容を検証しないため、優先度は悪用可能性を確定するものではありません。
+
 ## PHPのAST解析
 
 `--source`で[nikic/PHP-Parser](https://github.com/nikic/PHP-Parser)を使い、`.php`ファイルをインポート・実行せずに解析します。
@@ -120,7 +146,7 @@ SPDX式の`AND`・`OR`・括弧・`WITH`例外を解析します。`AND`は全�
 
 `--customer`・`--target`・`--issuer`は顧客名・対象名・作成者です。対象名は未指定時にSBOMのファイル名になります。既定の`--lang en`は英語、`--lang ja`は主要な見出し・要約・組み込みルールの概要と推奨対応を日本語にします。脆弱性情報の本文や技術的な根拠には元の言語が残ります。
 
-Critical／Highは赤、Mediumは黄、Lowは青、Noneは緑、Unratedは灰色で、色とラベルを併記します。重大度は検証済みCVSS 3.0／3.1基本ベクトルまたはOSVのDBラベルに基づきます。該当する`affected.severity`は全体のベクトルより優先します。別名統合時には根拠を残し、対応する最も高い重大度を表示します。CVSS 2／4や不正ベクトルは保存しますが計算せず、他に根拠がなければUnratedです。本文、コード候補、ライセンスから重大度を推測しません。CVSS 0／Noneも脆弱性がないことの証明ではありません。
+Critical／Highは赤、Mediumは黄、Lowは青、Noneは緑、Unratedは灰色で、色とラベルを併記します。重大度は検証済みCVSS 3.0／3.1基本ベクトル、CVSS 4.0ベクトル、またはOSVのDBラベルに基づきます。該当する`affected.severity`は全体のベクトルより優先します。別名統合時には根拠を残し、対応する最も高い重大度を表示します。CVSS 2や不正ベクトルは保存しますが計算せず、他に根拠がなければUnratedです。本文、コード候補、ライセンスから重大度を推測しません。CVSS 0／Noneも脆弱性がないことの証明ではありません。
 
 日本語DOCXにはNoto Sans JP（SIL OFL 1.1）を埋め込み、容量が約4 MB増えます。LibreOfficeの描画で体裁を確認していますが、閲覧環境によって最終的な改ページは変わる場合があります。元の重大度情報、フィールドパス、参照先はJSONスキーマ1.1に保存します。他言語版と形式を揃え、PHPの`sourceAnalysis`には発見・解析済みファイル数も記録します。
 

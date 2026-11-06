@@ -14,3 +14,6 @@ OSV advisory records retain their original source licensing.
 
 SecuLens is independent of Trivy and the optical lens company using the
 SECULENS name.
+
+schemas/cvss-v4-data.json contains CVSS v4.0 tables from https://github.com/FIRSTdotorg/cvss-v4-calculator
+Copyright (c) 2023 FIRST.ORG, Inc., Red Hat, and contributors. BSD-2-Clause; see schemas/LICENSE-CVSS.
