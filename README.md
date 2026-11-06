@@ -100,6 +100,32 @@ Malformed, unsupported or incomplete ranges are recorded as unassessed, rather t
 
 SPDX expressions are parsed with `AND`, `OR`, parentheses and `WITH` exceptions. `AND` requires all branches to be allowed; `OR` accepts an allowed choice. Exceptions require a complete expression entry. Deny takes precedence for the same leaf. Unknown, custom or missing licenses require review. Without a policy, licenses require review. Declared license accuracy, source licensing, distribution obligations and regulatory compliance are not verified.
 
+## Prioritization
+
+Add an optional `context` to the policy file to rank vulnerabilities for one environment. Without it, reports have no priority. Severity and CVSS scores never change.
+
+```json
+{
+  "allow": ["MIT"],
+  "context": {
+    "defaults": { "exposure": "internal", "justification": "Runs on the private network" },
+    "components": [
+      { "name": "lodash", "ecosystem": "npm", "reachability": "not-reachable", "justification": "Only used by build scripts" }
+    ]
+  }
+}
+```
+
+Each finding starts from a baseline: Critical is P1, High and Unrated are P2, Medium is P3, Low and None are P4. Each stated factor then moves it one level, within P1 to P4. None stays P4.
+
+| Factor | Raises | No change | Lowers |
+|---|---|---|---|
+| `exposure` | `internet` | `internal` | `isolated` |
+| `reachability` | `reachable` | `unknown` | `not-reachable` |
+| `criticality` | `high` | `medium` | `low` |
+
+The first `components` entry that matches the package name (and `ecosystem`, if given) and states a factor wins; otherwise `defaults` applies. Every entry requires a `justification`. Each finding records the factors used, their effect, source and justification in `priority`, and the Word report shows them. SecuLens does not verify these statements, so a priority does not establish exploitability.
+
 ## PHP AST review
 
 `--source` parses `.php` files using [nikic/PHP-Parser](https://github.com/nikic/PHP-Parser), without importing or executing them. Rules flag:
@@ -117,7 +143,7 @@ Imports of functions are recognized syntactically. Namespace fallback, shadowing
 
 `--customer`, `--target` and `--issuer` fill customer, target and preparer. Target defaults to the SBOM filename. `--lang en` is the default; `--lang ja` translates principal headings, overview, built-in review summaries and recommendations. Advisory content and technical evidence retain their original language.
 
-Critical/High are red, Medium amber, Low blue, None green and Unrated gray. Labels supplement colors. Severity derives from validated CVSS 3.0/3.1 base vectors or recognized OSV database labels. Applicable `affected.severity` overrides top-level vectors. Alias consolidation retains provenance and displays the highest supported severity. CVSS 2/4 and malformed vectors are preserved but not scored; absent other usable evidence they remain Unrated. Severity is not inferred from prose, code candidates or licenses; CVSS 0/None does not mean absence of vulnerabilities.
+Critical/High are red, Medium amber, Low blue, None green and Unrated gray. Labels supplement colors. Severity derives from validated CVSS 3.0/3.1 base vectors, CVSS 4.0 vectors or recognized OSV database labels. Applicable `affected.severity` overrides top-level vectors. Alias consolidation retains provenance and displays the highest supported severity. CVSS 2 and malformed vectors are preserved but not scored; absent other usable evidence they remain Unrated. Severity is not inferred from prose, code candidates or licenses; CVSS 0/None does not mean absence of vulnerabilities.
 
 Japanese DOCX embeds Noto Sans JP (SIL OFL 1.1), adding approximately 4 MB. Report layout was checked using LibreOffice rendering; final pagination may vary with the Word viewer. Original metadata, field paths and references remain in report JSON schema `1.1`, compatible with the other implementations. PHP `sourceAnalysis` also records discovered/parsed file counts.
 

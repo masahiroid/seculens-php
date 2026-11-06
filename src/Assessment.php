@@ -4,11 +4,12 @@ namespace SecuLens;
 
 final class Assessment
 {
-    public const VERSION = '1.4.0';
+    public const VERSION = '1.5.0';
     public const LIMITATIONS = [
         'No match means no matching record in the supplied database snapshot, not absence of vulnerabilities.',
         'License policy checks are not a legal compliance determination.',
         'AST rules identify review candidates and complexity, not proven exploitability.',
+        'Priority combines advisory severity with customer-supplied context that SecuLens does not verify; it does not establish exploitability.',
         'SBOM content and package identifiers are supplied by the generating tool.',
         'Packagist matching follows Composer version normalization (up to four numeric parts and dev/alpha/beta/RC/stable/patch stability); branch versions such as dev-main or 1.x-dev are unassessed.',
     ];
@@ -17,7 +18,7 @@ final class Assessment
         $sbom = Sbom::parse(Json::decode($sbomText)); Database::validate($records);
         $policy = Licenses::validatePolicy($options['policy'] ?? []);
         $report = [
-            'schemaVersion'=>'1.1','tool'=>['name'=>'SecuLens','version'=>self::VERSION],
+            'schemaVersion'=>'1.2','tool'=>['name'=>'SecuLens','version'=>self::VERSION],
             'createdAt'=>$options['createdAt'] ?? (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d\TH:i:s.v\Z'),
             'customer'=>$options['customer'] ?? 'Customer','target'=>$options['target'] ?? 'SBOM',
             'sbomSha256'=>hash('sha256', $sbomText),
@@ -50,6 +51,7 @@ final class Assessment
             $report['checks'][] = $check;
         }
         $report['findings'] = self::consolidate($report['findings']);
+        if (array_key_exists('context', $policy)) { $report['findings'] = Priority::apply($report['findings'], $sbom['components'], $policy['context']); }
         return $report;
     }
     private static function consolidate(array $findings): array

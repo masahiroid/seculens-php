@@ -28,6 +28,7 @@ final class WordReport
         'Shell execution requires review'=>'シェル実行の確認が必要',
         'Dynamic PHP evaluation'=>'動的なPHPコード評価',
         'No match means no matching record in the supplied database snapshot, not absence of vulnerabilities.'=>'照合なしは使用したDB内に該当情報がないことを示し、脆弱性が存在しないことを保証しません。',
+        'Priority combines advisory severity with customer-supplied context that SecuLens does not verify; it does not establish exploitability.'=>'優先度は、アドバイザリの重要度に顧客が申告した状況を組み合わせたものです。SecuLensは申告内容を検証せず、悪用可能性を確定するものでもありません。',
         'License policy checks are not a legal compliance determination.'=>'ライセンスポリシー評価は法的な適合性の確定を行うものではありません。',
         'AST rules identify review candidates and complexity, not proven exploitability.'=>'AST検査は要確認のコードや複雑性を抽出します。悪用可能性を立証するものではありません。',
         'SBOM content and package identifiers are supplied by the generating tool.'=>'SBOMの内容とパッケージ識別情報は生成ツールが提供したものです。',
@@ -69,7 +70,7 @@ final class WordReport
         $page = ['pageSizeW'=>11906,'pageSizeH'=>16838,'marginTop'=>1134,'marginBottom'=>1134,'marginLeft'=>1134,'marginRight'=>1134,'headerHeight'=>400,'footerHeight'=>500];
         $s = $word->addSection($page);
         $findings = $r['findings'];
-        usort($findings, static fn(array $a, array $b): int => [array_search($a['category'], array_keys(self::CATEGORIES), true),array_search($a['severity']['level'] ?? 'unknown', Severity::LEVELS, true),$a['subject'],$a['ruleId'],$a['line'] ?? 0] <=> [array_search($b['category'], array_keys(self::CATEGORIES), true),array_search($b['severity']['level'] ?? 'unknown', Severity::LEVELS, true),$b['subject'],$b['ruleId'],$b['line'] ?? 0]);
+        usort($findings, static fn(array $a, array $b): int => [array_search($a['category'], array_keys(self::CATEGORIES), true),$a['priority']['level'] ?? 'P9',array_search($a['severity']['level'] ?? 'unknown', Severity::LEVELS, true),$a['subject'],$a['ruleId'],$a['line'] ?? 0] <=> [array_search($b['category'], array_keys(self::CATEGORIES), true),$b['priority']['level'] ?? 'P9',array_search($b['severity']['level'] ?? 'unknown', Severity::LEVELS, true),$b['subject'],$b['ruleId'],$b['line'] ?? 0]);
         if ($customer) {
             $s->addText('SecuLens', ['size'=>28,'bold'=>true,'color'=>'000000'], ['spaceBefore'=>1400,'spaceAfter'=>280]);
             $s->addTitle($this->t('Software Security Assessment Report','ソフトウェアセキュリティ評価報告書'), 0);
@@ -94,7 +95,7 @@ final class WordReport
             $marks[count($rows)-1] = [0,$level];
         }
         $this->table($s,$rows,[30,20,120],$marks);
-        $s->addText($this->t('Severity uses CVSS 3.0/3.1 base scores or database labels. CVSS 2/4 vectors are retained but not calculated. Severity does not establish exploitability or business impact.','重要度はCVSS 3.0／3.1基本値またはDBのラベルに基づきます。CVSS 2／4は保存しますが計算しません。顧客環境での悪用可能性や事業影響を確定するものではありません。'));
+        $s->addText($this->t('Severity uses CVSS 3.0/3.1/4.0 scores or database labels. CVSS 2 vectors are retained but not calculated. Severity does not establish exploitability or business impact.','重要度はCVSS 3.0／3.1／4.0のスコアまたはDBのラベルに基づきます。CVSS 2は保存しますが計算しません。顧客環境での悪用可能性や事業影響を確定するものではありません。'));
         $rows = [[$this->t('Category','分類'),$this->t('Count','件数')]];
         foreach (self::CATEGORIES as $cat=>$labels) { $rows[] = [$labels[$this->ja ? 1 : 0],(string) count(array_filter($findings, static fn(array $f): bool => $f['category'] === $cat))]; }
         $this->table($s,$rows,[140,30]);
@@ -116,8 +117,12 @@ final class WordReport
             $s->addText($this->local($f['summary']),null,['keepNext'=>true]);
             if ($f['category'] === 'vulnerability') {
                 $severity = $f['severity'] ?? ['level'=>'unknown','sources'=>[]];
-                $s->addText($this->t('Severity','重要度').'  '.$this->findingLabel($f).(isset($severity['score']) ? ' | CVSS 3 '.number_format($severity['score'],1) : ''),['bold'=>true,'color'=>self::PALETTE[$severity['level']][2]]);
-                foreach ($severity['sources'] as $source) { $s->addText($source['recordId'].' | '.$source['field'].' | '.(isset($source['score']) ? 'CVSS 3 '.number_format($source['score'],1) : $source['type'].': '.$source['value']),['size'=>9]); }
+                $s->addText($this->t('Severity','重要度').'  '.$this->findingLabel($f).(isset($severity['score']) ? ' | '.self::scoreLabel($severity).' '.number_format($severity['score'],1) : ''),['bold'=>true,'color'=>self::PALETTE[$severity['level']][2]]);
+                foreach ($severity['sources'] as $source) { $s->addText($source['recordId'].' | '.$source['field'].' | '.(isset($source['score']) ? ($source['type'] === 'CVSS_V4' ? 'CVSS 4 ' : 'CVSS 3 ').number_format($source['score'],1) : $source['type'].': '.$source['value']),['size'=>9]); }
+                if (isset($f['priority'])) {
+                    $s->addText($this->t('Priority','優先度').'  '.$f['priority']['level'].' | '.$this->t('baseline','基準').' '.$f['priority']['baseline'],['bold'=>true]);
+                    foreach ($f['priority']['factors'] as $factor) { $s->addText($factor['factor'].': '.$factor['value'].' ('.sprintf('%+d',$factor['effect']).') | '.$factor['justification'].' | '.$factor['source'],['size'=>9]); }
+                }
                 if (!$severity['sources']) { $s->addText($this->t('No usable severity metadata available. Review the advisory references.','重要度を判定できるDB情報がありません。参照先で確認してください。')); }
             }
             $s->addText($this->t('Evidence','根拠').'  '.$f['evidence'],null,['keepNext'=>true]);
@@ -166,5 +171,10 @@ final class WordReport
             }
         }
         $s->addTextBreak(1,['size'=>2],['spaceAfter'=>40]);
+    }
+    private static function scoreLabel(array $severity): string
+    {
+        foreach ($severity['sources'] as $source) { if (($source['score'] ?? null) === $severity['score'] && $source['type'] === 'CVSS_V4') { return 'CVSS 4'; } }
+        return 'CVSS 3';
     }
 }

@@ -16,7 +16,7 @@ final class Mcp
                     'fetchOsv' => ['type' => 'boolean', 'description' => 'Fetch candidate advisories from api.osv.dev if dbPath not provided (default: true)'],
                     'policy' => [
                         'type' => 'object',
-                        'description' => 'License policy with allow and/or deny lists',
+                        'description' => 'License policy with allow and/or deny lists and optional prioritization context',
                         'properties' => [
                             'allow' => ['type' => 'array', 'items' => ['type' => 'string']],
                             'deny' => ['type' => 'array', 'items' => ['type' => 'string']],
@@ -82,7 +82,7 @@ final class Mcp
                 'result' => [
                     'protocolVersion' => '2024-11-05',
                     'capabilities' => ['tools' => new \stdClass()],
-                    'serverInfo' => ['name' => 'seculens-php', 'version' => '1.4.0'],
+                    'serverInfo' => ['name' => 'seculens-php', 'version' => '1.5.0'],
                 ],
             ];
         }

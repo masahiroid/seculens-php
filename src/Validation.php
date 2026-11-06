@@ -10,7 +10,7 @@ final class Validation
     /** Pass JSON objects as stdClass, preserving the distinction between {} and []. */
     public static function validate(mixed $data, string $kind = 'sbom'): array
     {
-        if ($kind === 'report') { $name = 'report-1.1.schema.json'; }
+        if ($kind === 'report') { $name = $data instanceof \stdClass && ($data->schemaVersion ?? null) === '1.1' ? 'report-1.1.schema.json' : 'report-1.2.schema.json'; }
         elseif ($kind !== 'sbom') { throw new \InvalidArgumentException('Kind must be sbom or report'); }
         elseif ($data instanceof \stdClass && ($data->bomFormat ?? null) === 'CycloneDX' && in_array($data->specVersion ?? null, ['1.4','1.5','1.6','1.7'], true)) {
             $name = 'bom-'.$data->specVersion.'.schema.json';

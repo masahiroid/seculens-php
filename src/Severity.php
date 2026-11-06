@@ -60,7 +60,7 @@ final class Severity
             if (!is_array($entries)) { continue; }
             foreach ($entries as $j => $e) {
                 if (!is_array($e) || !is_string($e['score'] ?? null)) { continue; }
-                $score = ($e['type'] ?? '') === 'CVSS_V3' ? self::cvss3($e['score']) : null;
+                $kind = $e['type'] ?? ''; $score = $kind === 'CVSS_V3' ? self::cvss3($e['score']) : ($kind === 'CVSS_V4' ? Cvss4::score($e['score']) : null);
                 $source = ['recordId'=>$record['id'],'field'=>$field.'['.$j.']','type'=>(string) ($e['type'] ?? 'unknown'),'value'=>$e['score'],'level'=>$score !== null ? self::level($score) : 'unknown'];
                 if ($score !== null) { $source['score'] = $score; }
                 $sources[] = $source;
