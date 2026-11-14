@@ -52,7 +52,11 @@ final class WordReport
     public static function write(array $report, string $path, string $language = 'en', string $style = 'standard', string $issuer = ''): void
     {
         if (!in_array($language, ['en','ja'], true) || !in_array($style, ['standard','customer'], true)) { throw new \InvalidArgumentException('Invalid report language or style'); }
-        (new self($language === 'ja'))->build($report, $path, $style === 'customer', $issuer);
+        $vendor = dirname((new \ReflectionClass(PhpWord::class))->getFileName()).DIRECTORY_SEPARATOR;
+        // phpword 1.4 indexes arrays with null styles, which PHP 8.5 deprecates; keep that vendor noise off the CLI.
+        set_error_handler(static fn(int $no, string $msg, string $file): bool => str_starts_with($file, $vendor), E_DEPRECATED);
+        try { (new self($language === 'ja'))->build($report, $path, $style === 'customer', $issuer); }
+        finally { restore_error_handler(); }
     }
     private function build(array $r, string $path, bool $customer, string $issuer): void
     {
