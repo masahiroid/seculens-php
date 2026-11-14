@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.1
+
+- Word report generation no longer prints PHP 8.5 "Using null as an array offset" deprecations from `phpoffice/phpword`. Only deprecations raised inside that library while the report is being written are hidden; all other errors are still reported.
+- No change to findings or report output.
+
 ## 1.5.0
 
 - Calculate CVSS 4.0 scores from `CVSS_V4` vectors using FIRST's published tables. Advisories with only a CVSS 4 vector are no longer Unrated.

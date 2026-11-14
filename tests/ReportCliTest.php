@@ -19,6 +19,26 @@ final class ReportCliTest extends TestCase
         $base=dirname(__DIR__).'/examples/';
         return ['sbom'=>$base.'cyclonedx.json','db'=>$base.'database.json','policy'=>$base.'policy.json','source'=>$base,'lang'=>'ja','report-style'=>'customer','output'=>$this->directory,'customer'=>'顧客 & Example <Company>','target'=>'PHP target','issuer'=>'Assessment team'];
     }
+    public function testWordGenerationKeepsVendorDeprecationsOffTheCli(): void
+    {
+        $o=$this->options();
+        $process=new Process([PHP_BINARY,'-d','display_errors=stderr','-d','error_reporting=-1',dirname(__DIR__).'/bin/seculens','scan',$o['sbom'],'--db',$o['db'],'--lang','ja','--output',$this->directory]);
+        $process->run();
+        self::assertSame(0,$process->getExitCode(),$process->getErrorOutput());
+        self::assertStringNotContainsString('Deprecated',$process->getOutput().$process->getErrorOutput());
+        self::assertFileExists($this->directory.'/report.docx');
+    }
+    public function testWordGenerationRestoresTheCallersErrorHandler(): void
+    {
+        $seen=[];set_error_handler(static function(int $no,string $msg) use (&$seen): bool { $seen[]=$msg;return true; });
+        try {
+            $report=Runner::scan(['sbom'=>$this->options()['sbom'],'db'=>$this->options()['db'],'output'=>$this->directory])['report'];
+            WordReport::write($report,$this->directory.'/again.docx');
+            try { WordReport::write($report,$this->directory.'/bad.docx','fr'); self::fail('Invalid language accepted'); } catch (\InvalidArgumentException) {}
+            trigger_error('caller deprecation',E_USER_DEPRECATED);
+        } finally { restore_error_handler(); }
+        self::assertSame(['caller deprecation'],$seen);
+    }
     public function testCustomerReportFontAndJsonEvidence(): void
     {
         $options=$this->options();$result=Runner::scan($options);
