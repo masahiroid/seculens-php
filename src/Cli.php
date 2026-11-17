@@ -18,6 +18,7 @@ final class Cli
         $scan->addArgument('sbom',InputArgument::REQUIRED,'SBOM JSON file');
         foreach (['db'=>'Local OSV snapshot JSON','policy'=>'License policy JSON','source'=>'PHP source file/directory','customer'=>'Customer name','target'=>'Target system name','issuer'=>'Report preparer'] as $name=>$help) { $scan->addOption($name,null,InputOption::VALUE_REQUIRED,$help,$name==='customer'?'Customer':null); }
         $scan->addOption('fetch-osv',null,InputOption::VALUE_NONE,'Fetch OSV candidates; sends package names/ecosystems only');
+        $scan->addOption('cool-off',null,InputOption::VALUE_REQUIRED,'Flag npm, PyPI and Packagist releases younger than N days (1-3650); sends package names/versions to those registries');
         $scan->addOption('lang',null,InputOption::VALUE_REQUIRED,'Word language: en / ja','en');
         $scan->addOption('report-style',null,InputOption::VALUE_REQUIRED,'Report layout: standard / customer','standard');
         $scan->addOption('output',null,InputOption::VALUE_REQUIRED,'Report output directory','reports');

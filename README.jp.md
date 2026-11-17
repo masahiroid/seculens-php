@@ -70,6 +70,21 @@ php bin/seculens scan bom.json --fetch-osv --output reports/live
 
 `--fetch-osv`ではパッケージ名とエコシステムを`api.osv.dev`へ送信し、照合はローカルで行います。ソースコード、バージョン、SBOM全体は送信しません。ウィザードには実行前に送信内容を表示します。通信失敗や不正な応答では検査を停止します。`--db`による検査はネットワーク接続を使いません。`--db`と`--fetch-osv`はどちらか一方を指定してください。
 
+## ロックファイル整合性とクールオフ
+
+検査のたびに、`--source`のディレクトリ（指定がなければSBOMと同じディレクトリ）にある`package-lock.json`と`composer.lock`を読み込み、次を報告します。
+
+- `SC-INSECURE-REGISTRY-URL`: `http://`で取得・ダウンロードされるパッケージ。
+- `SC-INTEGRITY-MISMATCH`: `package-lock.json`の`integrity`値が、同じ名前・バージョン・アルゴリズムのSBOMハッシュのどれとも一致しない。SBOMの16進ハッシュは、npmと同じbase64に変換して比較します。
+
+ロックファイルがない、または読み込めない場合は対象外です。このチェックはネットワークを使いません。
+
+```sh
+php bin/seculens scan sbom.json --db database.json --cool-off 7 --output reports
+```
+
+`--cool-off 日数`（1〜3650）を指定すると、公開から指定日数未満のnpm・PyPI・Packagistのリリースを`SC-PACKAGE-AGE-UNVERIFIED`として報告します。パッケージ名とバージョンを`registry.npmjs.org`、`pypi.org`、`repo.packagist.org`に送信します。公開日を取得できなかったリリースは報告されないため、検出がなくてもすべてのリリースが十分に古いとは限りません。MCPの`seculens_scan`ツールでも`lockfileDir`と`coolOffDays`として指定できます。
+
 ## SBOMの生成
 
 [Syft](https://github.com/anchore/syft)を別途導入して実行します。

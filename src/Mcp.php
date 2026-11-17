@@ -22,6 +22,8 @@ final class Mcp
                             'deny' => ['type' => 'array', 'items' => ['type' => 'string']],
                         ],
                     ],
+                    'lockfileDir' => ['type' => 'string', 'description' => "Directory with package-lock.json or composer.lock to check for integrity (default: the SBOM's directory)"],
+                    'coolOffDays' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 3650, 'description' => 'Flag npm, PyPI and Packagist releases younger than this many days; sends package names/versions to those registries'],
                 ],
                 'required' => ['sbomPath'],
             ],
@@ -82,7 +84,7 @@ final class Mcp
                 'result' => [
                     'protocolVersion' => '2024-11-05',
                     'capabilities' => ['tools' => new \stdClass()],
-                    'serverInfo' => ['name' => 'seculens-php', 'version' => '1.5.1'],
+                    'serverInfo' => ['name' => 'seculens-php', 'version' => '1.6.0'],
                 ],
             ];
         }
@@ -105,6 +107,7 @@ final class Mcp
             try {
                 $contentText = '';
                 if ($name === 'seculens_scan') {
+                    $coolOff = ($args['coolOffDays'] ?? null) === null ? null : Integrity::parseCoolOffDays($args['coolOffDays']);
                     $sbomRaw = file_get_contents($args['sbomPath']);
                     if ($sbomRaw === false) { throw new \RuntimeException('Cannot read sbomPath'); }
                     $sbom = Sbom::parse(json_decode($sbomRaw, true));
@@ -128,6 +131,9 @@ final class Mcp
                         'databaseSource' => $dbSource,
                         'databaseHash' => $dbHash,
                     ]);
+                    $lockfileDir = !empty($args['lockfileDir']) ? (string)$args['lockfileDir'] : dirname((string)$args['sbomPath']);
+                    array_push($report['findings'], ...Integrity::checkLockfileIntegrity($lockfileDir, $sbom));
+                    if ($coolOff !== null) { array_push($report['findings'], ...Integrity::checkPackageCoolOff($sbom['components'], $coolOff)); }
                     $affected = count(array_filter($report['findings'], static fn($f) => ($f['category'] ?? '') === 'vulnerability' && ($f['status'] ?? '') === 'affected'));
                     $denied = count(array_filter($report['findings'], static fn($f) => ($f['category'] ?? '') === 'license' && ($f['status'] ?? '') === 'denied'));
                     $contentText = json_encode([

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0
+
+- PHP parity: every scan now runs the lockfile integrity check (`package-lock.json` and `composer.lock` next to the SBOM, or in `--source`), and `scan` gains `--cool-off DAYS`. Findings no longer carry a placeholder `line` of 1.
+- Lockfile checks now agree across TypeScript, Python and PHP. A shared fixture (`supply-chain.json`) checks every finding field in all three. Odd-length hex digests are no longer decoded, mismatch evidence lists SBOM hashes as compact JSON, and the composer.lock recommendation text is the same in every implementation.
+- `--cool-off` now checks npm, PyPI and Packagist releases in every implementation, not only the implementation's own ecosystem. It accepts 1 to 3650 days and rejects anything else with exit code 2. Release dates come from `registry.npmjs.org`, `pypi.org` and `repo.packagist.org`; lookups time out after 10 seconds and failed lookups are not reported.
+- MCP `seculens_scan` accepts `lockfileDir` and `coolOffDays`, matching the TypeScript and Python servers.
+- Document the lockfile integrity and cool-off checks in the README.
+
 ## 1.5.1
 
 - Word report generation no longer prints PHP 8.5 "Using null as an array offset" deprecations from `phpoffice/phpword`. Only deprecations raised inside that library while the report is being written are hidden; all other errors are still reported.
