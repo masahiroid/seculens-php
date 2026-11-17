@@ -90,4 +90,23 @@ final class McpTest extends TestCase
         self::assertGreaterThan(0, $data['summary']['components']);
         self::assertIsArray($data['findings']);
     }
+
+    public function testScanChecksLockfileDirAndRejectsInvalidCoolOff(): void
+    {
+        $dir = sys_get_temp_dir().'/seculens-mcp-'.bin2hex(random_bytes(6)); mkdir($dir);
+        file_put_contents($dir.'/composer.lock', json_encode(['packages' => [['name' => 'acme/http', 'dist' => ['url' => 'http://mirror.example/a.zip']]]], JSON_UNESCAPED_SLASHES));
+        $call = fn(array $extra): array => Mcp::handleRequest(['jsonrpc' => '2.0', 'id' => 9, 'method' => 'tools/call', 'params' => ['name' => 'seculens_scan', 'arguments' => [
+            'sbomPath' => $this->root.'/examples/cyclonedx.json', 'dbPath' => $this->root.'/examples/database.json', 'lockfileDir' => $dir, ...$extra,
+        ]]]);
+        try {
+            $ok = $call([]);
+            self::assertFalse($ok['result']['isError']);
+            self::assertContains('SC-INSECURE-REGISTRY-URL', array_column(json_decode($ok['result']['content'][0]['text'], true)['findings'], 'ruleId'));
+            foreach ([0, 1.5, 'x'] as $days) {
+                $bad = $call(['coolOffDays' => $days]);
+                self::assertTrue($bad['result']['isError']);
+                self::assertStringContainsString('Cool-off must be a whole number', $bad['result']['content'][0]['text']);
+            }
+        } finally { unlink($dir.'/composer.lock'); rmdir($dir); }
+    }
 }

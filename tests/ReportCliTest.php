@@ -39,6 +39,28 @@ final class ReportCliTest extends TestCase
         } finally { restore_error_handler(); }
         self::assertSame(['caller deprecation'],$seen);
     }
+    public function testScanChecksLockfilesAndCoolOff(): void
+    {
+        $o=$this->options();
+        file_put_contents($this->directory.'/composer.lock',json_encode(['packages'=>[['name'=>'acme/http','dist'=>['url'=>'http://mirror.example/a.zip']]]],JSON_UNESCAPED_SLASHES));
+        $component=Runner::scan(['sbom'=>$o['sbom'],'db'=>$o['db'],'output'=>$this->directory.'/probe'])['report']['sbom']['components'][0];
+        $dates=[$component['ecosystem']=>[$component['name'].'@'.$component['version']=>gmdate('Y-m-d\TH:i:s\Z',time()-86400)]];
+        $result=Runner::scan(['sbom'=>$o['sbom'],'db'=>$o['db'],'source'=>$this->directory,'output'=>$this->directory.'/out','cool-off'=>'7','release-dates'=>static fn(): array=>$dates]);
+        $rules=array_column($result['report']['findings'],'ruleId','subject');
+        self::assertSame('SC-INSECURE-REGISTRY-URL',$rules['acme/http'] ?? null);
+        self::assertSame('SC-PACKAGE-AGE-UNVERIFIED',$rules[$component['name'].'@'.$component['version']] ?? null);
+    }
+    public function testCliRejectsInvalidCoolOffBeforeWritingReports(): void
+    {
+        $o=$this->options();
+        foreach (['0','abc','3651'] as $value) {
+            $process=new Process([PHP_BINARY,dirname(__DIR__).'/bin/seculens','scan',$o['sbom'],'--db',$o['db'],'--cool-off',$value,'--output',$this->directory]);
+            $process->run();
+            self::assertSame(2,$process->getExitCode());
+            self::assertStringContainsString('Cool-off must be a whole number',$process->getOutput().$process->getErrorOutput());
+        }
+        self::assertFileDoesNotExist($this->directory.'/report.json');
+    }
     public function testCustomerReportFontAndJsonEvidence(): void
     {
         $options=$this->options();$result=Runner::scan($options);

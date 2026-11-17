@@ -20,3 +20,7 @@ All original SBOM/database text is retained. Report IDs include their hashes and
 Composer versions follow Composer normalization and stability order (1.4.0); branch versions (`dev-main`, `1.x-dev`) remain unassessed. Branch alias resolution, interprocedural dataflow, framework-aware sources/sinks, source license discovery, and container/OS vulnerability matching are future work.
 
 Validation includes unit/integration tests, native Composer installation, actual Syft generation in both formats and bilingual report rendering. An external development check compared 1,451 version pairs and all 2,592 CVSS 3.1 base metric combinations with the independent Python implementation; shared sample assessment JSON agreed except tool version.
+
+## Supply-chain checks
+
+Lockfile integrity (`package-lock.json`, `composer.lock`) runs on every scan without network access. `--cool-off` looks up release dates for npm, PyPI and Packagist components and evaluates them with a pure function, so the decision is tested offline against the shared `supply-chain.json` fixture, which all three implementations must reproduce field for field. Failed lookups produce no finding.

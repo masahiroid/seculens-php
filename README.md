@@ -67,6 +67,21 @@ php bin/seculens scan bom.json --fetch-osv --output reports/live
 
 `--fetch-osv` sends package names and ecosystems to `api.osv.dev`. Matching is performed locally. Source code, versions and the entire SBOM are not uploaded. The wizard discloses this before execution. Fetching requires network access; HTTP failures or malformed responses stop the assessment. `--db` assessment does not use the network. Choose exactly one of `--db` and `--fetch-osv`.
 
+## Lockfile integrity and cool-off
+
+Every scan reads `package-lock.json` and `composer.lock` from the `--source` directory, or from the SBOM's directory when `--source` is not given. It reports:
+
+- `SC-INSECURE-REGISTRY-URL`: a package resolved or downloaded over plain `http://`.
+- `SC-INTEGRITY-MISMATCH`: a `package-lock.json` `integrity` value that matches none of the SBOM hashes for the same name, version and algorithm. Hex SBOM digests are compared in base64, as npm stores them.
+
+A missing or unparseable lockfile is skipped. This check does not use the network.
+
+```sh
+php bin/seculens scan sbom.json --db database.json --cool-off 7 --output reports
+```
+
+`--cool-off DAYS` (1 to 3650) reports `SC-PACKAGE-AGE-UNVERIFIED` for npm, PyPI and Packagist releases younger than `DAYS` days. It sends package names and versions to `registry.npmjs.org`, `pypi.org` and `repo.packagist.org`. A release date that cannot be fetched is not reported, so a clean result does not prove that every release is old enough. The MCP `seculens_scan` tool accepts the same options as `lockfileDir` and `coolOffDays`.
+
 ## Generate SBOMs
 
 Install [Syft](https://github.com/anchore/syft) separately:
