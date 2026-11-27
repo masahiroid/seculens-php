@@ -33,6 +33,9 @@ final class WordReport
         'AST rules identify review candidates and complexity, not proven exploitability.'=>'AST検査は要確認のコードや複雑性を抽出します。悪用可能性を立証するものではありません。',
         'SBOM content and package identifiers are supplied by the generating tool.'=>'SBOMの内容とパッケージ識別情報は生成ツールが提供したものです。',
         'Packagist matching follows Composer version normalization (up to four numeric parts and dev/alpha/beta/RC/stable/patch stability); branch versions such as dev-main or 1.x-dev are unassessed.'=>'PackagistはComposerのバージョン正規化（最大4桁の数値とdev/alpha/beta/RC/stable/patchの安定度）に従って照合します。dev-mainや1.x-devなどのブランチ指定は未判定になります。',
+        'Waivers record customer-approved decisions that SecuLens does not verify; waived findings remain in the report and are excluded only from exit codes.'=>'適用除外（waiver）は顧客が承認した判断を記録したもので、SecuLensはその内容を検証しません。適用除外した指摘は報告書に残り、終了コードの判定からのみ除外されます。',
+        'Remediate the finding or renew the waiver after a new review.'=>'指摘に対応するか、再審査のうえ適用除外を更新してください。',
+        'Remove the waiver, or correct its ruleId or subject.'=>'適用除外を削除するか、ruleIdまたはsubjectを修正してください。',
         'Review the advisory references for a fixed version and validate the upgrade.'=>'参照先で修正済みバージョンを確認し、更新後の動作を検証してください。',
         'Review the call and trace untrusted input before deciding whether it is exploitable.'=>'処理と外部入力の経路を確認し、実際の悪用可能性を判断してください。',
         'Consider simplifying the function and adding focused tests.'=>'関数の分割や簡素化を検討し、分岐に対応したテストを追加してください。',
@@ -128,6 +131,10 @@ final class WordReport
                     foreach ($f['priority']['factors'] as $factor) { $s->addText($factor['factor'].': '.$factor['value'].' ('.sprintf('%+d',$factor['effect']).') | '.$factor['justification'].' | '.$factor['source'],['size'=>9]); }
                 }
                 if (!$severity['sources']) { $s->addText($this->t('No usable severity metadata available. Review the advisory references.','重要度を判定できるDB情報がありません。参照先で確認してください。')); }
+            }
+            if (isset($f['waiver'])) {
+                $w = $f['waiver'];
+                $s->addText($this->ja ? "適用除外 {$w['expires']}まで | 承認者 {$w['approvedBy']} | {$w['justification']} | {$w['source']}" : "Waived until {$w['expires']} | approved by {$w['approvedBy']} | {$w['justification']} | {$w['source']}",null,['keepNext'=>true]);
             }
             $s->addText($this->t('Evidence','根拠').'  '.$f['evidence'],null,['keepNext'=>true]);
             $s->addText($this->t('Recommendation','推奨対応').'  '.$this->local($f['recommendation']));

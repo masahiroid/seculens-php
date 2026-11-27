@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.7.0
+
+- Add waivers: `--waivers <file>` reads an approved, expiring list of findings to accept (`schemas/waivers-1.0.schema.json`). A waiver matches a rule ID or alias, optionally limited to one subject, and requires a justification, an approver and an expiry date.
+- A waived finding keeps its status and evidence and gains a `waiver` record; it is excluded only from exit codes. Word reports show the waiver under the finding.
+- Expired waivers no longer apply and add a `WAIVER-EXPIRED` review finding; waivers that match nothing add `WAIVER-UNMATCHED`.
+- Report schema 1.3 adds `waiver` to findings. `seculens validate --kind report` still accepts schema 1.1 and 1.2 reports, and `--kind waivers` validates waiver files.
+- MCP `seculens_scan` accepts `waivers` and reports a `waived` count; its vulnerability and license counts exclude waived findings.
+- A shared fixture (`waivers.json`) checks waiver results field for field in all three implementations.
+- Update `opis/json-schema` to 2.6.2.
+
 ## 1.6.0
 
 - PHP parity: every scan now runs the lockfile integrity check (`package-lock.json` and `composer.lock` next to the SBOM, or in `--source`), and `scan` gains `--cool-off DAYS`. Findings no longer carry a placeholder `line` of 1.

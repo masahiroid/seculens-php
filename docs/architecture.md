@@ -8,7 +8,7 @@ SecuLens for PHP is a separate implementation. It does not invoke the Python or 
 - `Licenses`: parsed expression trees and allow/deny/review policy decisions.
 - `Severity` / `Cvss4`: validated CVSS 3 base scores, CVSS 4.0 scores, database labels, applicable overrides and provenance.
 - `Priority`: customer-context ranking from the policy `context`, without changing severity.
-- `Assessment`: schema 1.2 report contract, hashes, component checks and alias consolidation.
+- `Assessment`: schema 1.3 report contract, hashes, component checks and alias consolidation.
 - `Validation`: offline JSON Schema validation against bundled SPDX/CycloneDX/report schemas in `schemas/`; never loads schemas named by input.
 - `Analysis`: PHP syntax trees and independent function complexity; no analyzed code execution.
 - `WordReport` / `FontEmbedder`: customer/standard reports and bundled Japanese font embedding.
@@ -24,3 +24,7 @@ Validation includes unit/integration tests, native Composer installation, actual
 ## Supply-chain checks
 
 Lockfile integrity (`package-lock.json`, `composer.lock`) runs on every scan without network access. `--cool-off` looks up release dates for npm, PyPI and Packagist components and evaluates them with a pure function, so the decision is tested offline against the shared `supply-chain.json` fixture, which all three implementations must reproduce field for field. Failed lookups produce no finding.
+
+## Waivers
+
+`--waivers` reads a file that follows `schemas/waivers-1.0.schema.json`. Waivers are applied after every other check, by a pure function evaluated on the report date (UTC), so the shared `waivers.json` fixture tests matching, expiry and the `WAIVER-EXPIRED` and `WAIVER-UNMATCHED` findings offline in all three implementations. A waived finding keeps its status; only exit codes ignore it.

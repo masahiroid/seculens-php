@@ -22,6 +22,7 @@ final class Mcp
                             'deny' => ['type' => 'array', 'items' => ['type' => 'string']],
                         ],
                     ],
+                    'waivers' => ['type' => 'object', 'description' => 'Waiver file contents (schemaVersion 1.0); waived findings keep their status and gain a waiver record'],
                     'lockfileDir' => ['type' => 'string', 'description' => "Directory with package-lock.json or composer.lock to check for integrity (default: the SBOM's directory)"],
                     'coolOffDays' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 3650, 'description' => 'Flag npm, PyPI and Packagist releases younger than this many days; sends package names/versions to those registries'],
                 ],
@@ -84,7 +85,7 @@ final class Mcp
                 'result' => [
                     'protocolVersion' => '2024-11-05',
                     'capabilities' => ['tools' => new \stdClass()],
-                    'serverInfo' => ['name' => 'seculens-php', 'version' => '1.6.0'],
+                    'serverInfo' => ['name' => 'seculens-php', 'version' => '1.7.0'],
                 ],
             ];
         }
@@ -108,6 +109,7 @@ final class Mcp
                 $contentText = '';
                 if ($name === 'seculens_scan') {
                     $coolOff = ($args['coolOffDays'] ?? null) === null ? null : Integrity::parseCoolOffDays($args['coolOffDays']);
+                    $waivers = ($args['waivers'] ?? null) === null ? null : Waivers::validate($args['waivers']);
                     $sbomRaw = file_get_contents($args['sbomPath']);
                     if ($sbomRaw === false) { throw new \RuntimeException('Cannot read sbomPath'); }
                     $sbom = Sbom::parse(json_decode($sbomRaw, true));
@@ -134,12 +136,15 @@ final class Mcp
                     $lockfileDir = !empty($args['lockfileDir']) ? (string)$args['lockfileDir'] : dirname((string)$args['sbomPath']);
                     array_push($report['findings'], ...Integrity::checkLockfileIntegrity($lockfileDir, $sbom));
                     if ($coolOff !== null) { array_push($report['findings'], ...Integrity::checkPackageCoolOff($sbom['components'], $coolOff)); }
-                    $affected = count(array_filter($report['findings'], static fn($f) => ($f['category'] ?? '') === 'vulnerability' && ($f['status'] ?? '') === 'affected'));
-                    $denied = count(array_filter($report['findings'], static fn($f) => ($f['category'] ?? '') === 'license' && ($f['status'] ?? '') === 'denied'));
+                    if ($waivers !== null) { $report['findings'] = Waivers::apply($report['findings'], $waivers['waivers'], substr($report['createdAt'], 0, 10)); }
+                    $counted = Waivers::unwaived($report['findings']);
+                    $affected = count(array_filter($counted, static fn($f) => ($f['category'] ?? '') === 'vulnerability' && ($f['status'] ?? '') === 'affected'));
+                    $denied = count(array_filter($counted, static fn($f) => ($f['category'] ?? '') === 'license' && ($f['status'] ?? '') === 'denied'));
                     $contentText = json_encode([
                         'summary' => [
                             'components' => count($report['sbom']['components']),
                             'findings' => count($report['findings']),
+                            'waived' => count($report['findings']) - count($counted),
                             'affectedVulnerabilities' => $affected,
                             'deniedLicenses' => $denied,
                         ],
