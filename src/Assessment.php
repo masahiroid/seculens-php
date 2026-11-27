@@ -4,7 +4,7 @@ namespace SecuLens;
 
 final class Assessment
 {
-    public const VERSION = '1.6.0';
+    public const VERSION = '1.7.0';
     public const LIMITATIONS = [
         'No match means no matching record in the supplied database snapshot, not absence of vulnerabilities.',
         'License policy checks are not a legal compliance determination.',
@@ -18,7 +18,7 @@ final class Assessment
         $sbom = Sbom::parse(Json::decode($sbomText)); Database::validate($records);
         $policy = Licenses::validatePolicy($options['policy'] ?? []);
         $report = [
-            'schemaVersion'=>'1.2','tool'=>['name'=>'SecuLens','version'=>self::VERSION],
+            'schemaVersion'=>'1.3','tool'=>['name'=>'SecuLens','version'=>self::VERSION],
             'createdAt'=>$options['createdAt'] ?? (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d\TH:i:s.v\Z'),
             'customer'=>$options['customer'] ?? 'Customer','target'=>$options['target'] ?? 'SBOM',
             'sbomSha256'=>hash('sha256', $sbomText),
@@ -81,7 +81,9 @@ final class Assessment
     }
     public static function exitCode(array $report, bool $fail): int
     {
-        if ($fail && array_filter($report['findings'], static fn(array $f): bool => in_array($f['category'], ['vulnerability','security'], true) || $f['status'] === 'denied')) { return 1; }
-        return array_filter($report['checks'], static fn(array $c): bool => $c['status'] === 'unassessed') || array_filter($report['findings'], static fn(array $f): bool => $f['category'] === 'coverage') ? 2 : 0;
+        $findings = Waivers::unwaived($report['findings']);
+        if ($fail && array_filter($findings, static fn(array $f): bool => in_array($f['category'], ['vulnerability','security'], true) || $f['status'] === 'denied')) { return 1; }
+        // Every unassessed check has a coverage finding, so waiving that finding also clears exit code 2.
+        return array_filter($findings, static fn(array $f): bool => $f['category'] === 'coverage' || $f['status'] === 'unassessed') ? 2 : 0;
     }
 }

@@ -17,6 +17,7 @@ final class Cli
         $scan=new Command('scan'); $scan->setDescription('Assess SPDX/CycloneDX SBOM and write Word/JSON reports');
         $scan->addArgument('sbom',InputArgument::REQUIRED,'SBOM JSON file');
         foreach (['db'=>'Local OSV snapshot JSON','policy'=>'License policy JSON','source'=>'PHP source file/directory','customer'=>'Customer name','target'=>'Target system name','issuer'=>'Report preparer'] as $name=>$help) { $scan->addOption($name,null,InputOption::VALUE_REQUIRED,$help,$name==='customer'?'Customer':null); }
+        $scan->addOption('waivers',null,InputOption::VALUE_REQUIRED,'Waiver JSON: waived findings stay in the report but do not set the exit code');
         $scan->addOption('fetch-osv',null,InputOption::VALUE_NONE,'Fetch OSV candidates; sends package names/ecosystems only');
         $scan->addOption('cool-off',null,InputOption::VALUE_REQUIRED,'Flag npm, PyPI and Packagist releases younger than N days (1-3650); sends package names/versions to those registries');
         $scan->addOption('lang',null,InputOption::VALUE_REQUIRED,'Word language: en / ja','en');
@@ -32,7 +33,7 @@ final class Cli
         $app->add($sbom);
         $validation=new Command('validate'); $validation->setDescription('Validate SBOM or report JSON offline');
         $validation->addArgument('file',InputArgument::REQUIRED,'JSON file');
-        $validation->addOption('kind',null,InputOption::VALUE_REQUIRED,'sbom / report','sbom');
+        $validation->addOption('kind',null,InputOption::VALUE_REQUIRED,'sbom / report / waivers','sbom');
         $validation->setCode(static fn(InputInterface $in,OutputInterface $out): int => self::guard($out,static function() use($in,$out): int {
             $data=json_decode(Json::read($in->getArgument('file')),false,128,JSON_THROW_ON_ERROR);
             $result=Validation::validate($data,$in->getOption('kind'));
